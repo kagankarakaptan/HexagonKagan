@@ -4,21 +4,27 @@ using UnityEngine;
 
 public class MasterMind : MonoBehaviour
 {
-    public GameObject mother;
-    public GameObject tester;
+    public GameObject mother; //the center point and a parent for the rotation of the selected group of 3 hexes
 
-    public GameObject hexPrefab;
-    public Color[] colors;
-    private float hexSize;
-    public float spacing;
+    public GameObject hexPrefab; //prefab of the hex itself
+    public GameObject hiddenPrefab; //invisible hex prefab for the bottom of the gridMap
 
-    private Vector2[] rootMap;
+    public Color[] colors; //possible colors array for the hexes
+    public float hexSize; //keeps the size of the hexes with spacing value
+    public float spacing; //spacing between hexes
 
-    public int gridWidth = 8;
-    public int gridHeight = 9;
+    private Vector2[] rootMap; //1D matrix of the vector2 that keeps the collision points of the hexes each-other 
 
-    private Vector2 mapOffset;
+    public int gridWidth = 8; //size of the gridMap's width
+    public int gridHeight = 9; //size of the gridMap's height
 
+    private Vector2 mapOffset; //position of the grid's bottom left corner
+
+    public bool canSpin; //keeps the game state (can we play or should we wait the movements of the environment ?)
+    public bool canFall; //keeps the game state (can we play or should we wait the movements of the environment ?)
+    public bool canSelect; //keeps the game state (can we play or should we wait the movements of the environment ?)
+
+    public int groundedCount;
 
     private void Awake()
     {
@@ -29,6 +35,187 @@ public class MasterMind : MonoBehaviour
     }
 
     private void Start()
+    {
+        //creating the hexGrid
+        BuildMap();
+
+        //re-building the hexMap
+        ReBuild();
+
+        //setting the initial values when everything is ready
+        canSpin = true;
+        canFall = false;
+        canSelect = true;
+        groundedCount = gridHeight * gridWidth;
+
+
+    }
+
+
+
+
+    private void Update()
+    {
+        //selection hex group
+        if (Input.GetMouseButtonDown(0) && canSelect)
+        {
+            Collider2D[] hexes = Physics2D.OverlapCircleAll(Camera.main.ScreenToWorldPoint(Input.mousePosition), hexSize / 4f);
+
+            //Debug.Log(hexes.Length);
+
+            if (hexes.Length == 3)
+            {
+                if (mother.transform.childCount == 3)
+                    Release();
+
+                Collect(hexes);
+            }
+            //else
+            //    Release();
+        }
+
+
+        //Spinning the gruop
+        if (Input.GetKeyDown(KeyCode.Space) && mother.transform.childCount == 3 && canSpin)
+            Spin(true);
+
+
+        ////testing the possible movements
+        //if (Input.GetKeyDown(KeyCode.T))
+        //    Debug.Log(PossibleMovements());
+
+    }
+
+    //setting the selecting as a mother with children
+    public void Collect(Collider2D[] hexes)
+    {
+        Vector2 centerOfMass = (hexes[0].transform.position + hexes[1].transform.position + hexes[2].transform.position) / 3;
+
+        mother.transform.position = centerOfMass;
+        mother.GetComponent<SpriteRenderer>().enabled = true;
+
+        foreach (Collider2D hex in hexes)
+            hex.transform.SetParent(mother.transform);
+    }
+
+    //detaching children from currentSelection
+    public void Release()
+    {
+        mother.transform.DetachChildren();
+        mother.GetComponent<SpriteRenderer>().enabled = false;
+        mother.transform.rotation = Quaternion.Euler(0, 0, 0);
+
+    }
+
+    //spinning the hex goup
+    public void Spin(bool direction)
+    {
+        canFall = false;
+        canSelect = false;
+
+        //setting the game phase to movement of hexes
+        if (direction)
+        {
+            //rotating clockwise
+            mother.GetComponent<Animator>().Play("clockwise");
+        }
+
+        else
+        {
+            //rotating anticlockwise
+            mother.GetComponent<Animator>().Play("anticlockwise");
+        }
+
+    }
+
+    //testing for neighborhood
+    public List<GameObject> NeighborhoodTest()
+    {
+        List<GameObject> neighbors = new List<GameObject>();
+
+        foreach (Vector2 root in rootMap)
+        {
+            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, hexSize / 2f);
+
+            if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color && hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
+            {
+                if (!neighbors.Contains(hexes[0].gameObject)) neighbors.Add(hexes[0].gameObject);
+                if (!neighbors.Contains(hexes[1].gameObject)) neighbors.Add(hexes[1].gameObject);
+                if (!neighbors.Contains(hexes[2].gameObject)) neighbors.Add(hexes[2].gameObject);
+            }
+
+        }
+        return neighbors;
+    }
+
+    //testing killing victims
+    public void Action()
+    {
+        if (!canFall)
+        {
+            List<GameObject> victims = NeighborhoodTest();
+
+            if (victims.Count != 0)
+            {
+                mother.GetComponent<Animator>().Play("Idle");
+
+                foreach (GameObject victim in victims)
+                {
+                    victim.transform.position += new Vector3(0, 15f, 0);
+                    victim.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)];
+
+                }
+
+
+                Release();
+                canFall = true;
+                //StartCoroutine(WaitAndAction());
+            }
+
+
+            victims.Clear();
+        }
+
+
+    }
+
+    public int PossibleMovements()
+    {
+        int posibilities = 0;
+        float radius = hexSize / 2f;
+
+        foreach (Vector2 root in rootMap)
+        {
+            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, radius);
+            Collider2D[] others;
+
+            if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color)
+            {
+                others = Physics2D.OverlapCircleAll(hexes[2].transform.position, radius);
+
+                for (int i = 0; i < others.Length; i++)
+                    if (others[i] != hexes[0] && others[i] != hexes[1] && others[i].GetComponent<SpriteRenderer>().color == hexes[0].GetComponent<SpriteRenderer>().color) posibilities++;
+            }
+            else if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
+            {
+                others = Physics2D.OverlapCircleAll(hexes[1].transform.position, radius);
+
+                for (int i = 0; i < others.Length; i++)
+                    if (others[i] != hexes[0] && others[i] != hexes[2] && others[i].GetComponent<SpriteRenderer>().color == hexes[0].GetComponent<SpriteRenderer>().color) posibilities++;
+            }
+            else if (hexes[1].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
+            {
+                others = Physics2D.OverlapCircleAll(hexes[0].transform.position, radius);
+
+                for (int i = 0; i < others.Length; i++)
+                    if (others[i] != hexes[1] && others[i] != hexes[2] && others[i].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color) posibilities++;
+            }
+        }
+
+        return posibilities;
+    }
+
+    public void BuildMap()
     {
         int rootIndex = 0;
         //creating maps
@@ -61,192 +248,85 @@ public class MasterMind : MonoBehaviour
 
                 }
 
+                //creating hidding path for ground
+                if (row == 0)
+                    Instantiate(hiddenPrefab, worldPos - new Vector2(0, hexSize * Mathf.Sqrt(3) / 2f), Quaternion.identity).name = "hiddenHex";
+
+
                 //creating hexes
                 Instantiate(hexPrefab, worldPos, Quaternion.identity).GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)];
 
             }
 
-        //visualization of roots
-        //foreach (Vector2 position in rootMap)
-        //    Instantiate(tester, position, Quaternion.identity);
+    }
 
+    public void ReBuild()
+    {
+        List<GameObject> neighbors = NeighborhoodTest();
 
-        //re-building the hexMap
-        int similarity;
-        do
+        if (neighbors.Count != 0)
         {
-            similarity = 0;
-            List<GameObject> neighbors = new List<GameObject>();
-
-            foreach (Vector2 root in rootMap)
-            {
-                Collider2D[] hexes = Physics2D.OverlapCircleAll(root, hexSize / 2f);
-
-                if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color && hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
-                {
-                    similarity++;
-
-                    if (!neighbors.Contains(hexes[0].gameObject)) neighbors.Add(hexes[0].gameObject);
-                    if (!neighbors.Contains(hexes[1].gameObject)) neighbors.Add(hexes[1].gameObject);
-                    if (!neighbors.Contains(hexes[2].gameObject)) neighbors.Add(hexes[2].gameObject);
-                }
-
-
-            }
-
             foreach (GameObject victim in neighbors)
                 victim.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)];
 
             neighbors.Clear();
-
-        } while (similarity > 0);
-
-    }
-
-
-
-
-    private void Update()
-    {
-        //selection hex group
-        if (Input.GetMouseButtonDown(0))
-        {
-            Collider2D[] hexes = Physics2D.OverlapCircleAll(Camera.main.ScreenToWorldPoint(Input.mousePosition), 0.25f);
-
-            //Debug.Log(hexes.Length);
-
-            if (hexes.Length == 3)
-            {
-                if (mother.transform.childCount == 3)
-                    Release();
-
-                Collect(hexes);
-            }
-
+            ReBuild();
         }
 
-        //spinning the selected group
-        //if (Input.GetKeyDown(KeyCode.Space))
-        //    Spin(true);
+        neighbors.Clear();
 
-        //testing the gamestate
-        if (Input.GetKeyDown(KeyCode.Space) && mother.transform.childCount == 3)
-            Spin(true);
 
-        if (Input.GetKeyDown(KeyCode.T))
-            Debug.Log(PossibleMovements());
+
+
+
+        //int similarity;
+        //do
+        //{
+        //    similarity = 0;
+        //    List<GameObject> neighbors = new List<GameObject>();
+
+        //    foreach (Vector2 root in rootMap)
+        //    {
+        //        Collider2D[] hexes = Physics2D.OverlapCircleAll(root, hexSize / 2f);
+
+        //        if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color && hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
+        //        {
+        //            similarity++;
+
+        //            if (!neighbors.Contains(hexes[0].gameObject)) neighbors.Add(hexes[0].gameObject);
+        //            if (!neighbors.Contains(hexes[1].gameObject)) neighbors.Add(hexes[1].gameObject);
+        //            if (!neighbors.Contains(hexes[2].gameObject)) neighbors.Add(hexes[2].gameObject);
+        //        }
+
+
+        //    }
+
+        //    foreach (GameObject victim in neighbors)
+        //        victim.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)];
+
+        //    neighbors.Clear();
+
+        //} while (similarity > 0);
     }
 
-    //setting the selecting as a mother with children
-    public void Collect(Collider2D[] hexes)
+    private IEnumerator WaitAndAction()
     {
-        Vector2 centerOfMass = (hexes[0].transform.position + hexes[1].transform.position + hexes[2].transform.position) / 3;
+        yield return null;
+        //Debug.Log("falling started");
+        //Debug.Break();
 
-        mother.transform.position = centerOfMass;
-        mother.GetComponent<SpriteRenderer>().enabled = true;
 
-        foreach (Collider2D hex in hexes)
-            hex.transform.SetParent(mother.transform);
+        while (groundedCount != gridHeight * gridWidth)
+            yield return null;
+
+        //Debug.Log("everything settled");
+        canFall = false;
+        Action();
+
+
+
+
     }
 
-    //detaching children from currentSelection
-    public void Release()
-    {
-        mother.transform.DetachChildren();
-        mother.GetComponent<SpriteRenderer>().enabled = false;
-    }
-
-    public void Spin(bool clockwise)
-    {
-        if (clockwise)
-        {
-            //rotating clockwise
-            for (int i = 0; i < 3; i++)
-            {
-
-            }
-
-            //action
-            Action();
-        }
-
-        else
-        {
-            //rotating anticlockwise
-
-            //action
-            Action();
-        }
-    }
-
-    //testing for neighborhood
-    public List<GameObject> NeighborhoodTest()
-    {
-        List<GameObject> neighbors = new List<GameObject>();
-
-        foreach (Vector2 root in rootMap)
-        {
-            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, hexSize / 2f);
-
-            if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color && hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
-            {
-                if (!neighbors.Contains(hexes[0].gameObject)) neighbors.Add(hexes[0].gameObject);
-                if (!neighbors.Contains(hexes[1].gameObject)) neighbors.Add(hexes[1].gameObject);
-                if (!neighbors.Contains(hexes[2].gameObject)) neighbors.Add(hexes[2].gameObject);
-            }
-
-        }
-        return neighbors;
-    }
-
-    //destroying victims
-    public void Action()
-    {
-
-        List<GameObject> victims = NeighborhoodTest();
-
-        if (victims != null)
-        {
-            foreach (GameObject victim in victims)
-                Destroy(victim);
-        }
-
-        victims.Clear();
-    }
-
-    public int PossibleMovements()
-    {
-        int posibilities = 0;
-
-        foreach (Vector2 root in rootMap)
-        {
-            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, hexSize / 2f);
-            Collider2D[] others;
-
-            if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color)
-            {
-                others = Physics2D.OverlapCircleAll(hexes[2].transform.position, hexSize * 1.25f);
-
-                for (int i = 0; i < others.Length; i++)
-                    if (others[i] != hexes[0] && others[i] != hexes[1] && others[i].GetComponent<SpriteRenderer>().color == hexes[0].GetComponent<SpriteRenderer>().color) posibilities++;
-            }
-            else if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
-            {
-                others = Physics2D.OverlapCircleAll(hexes[1].transform.position, hexSize * 1.25f);
-
-                for (int i = 0; i < others.Length; i++)
-                    if (others[i] != hexes[0] && others[i] != hexes[2] && others[i].GetComponent<SpriteRenderer>().color == hexes[0].GetComponent<SpriteRenderer>().color) posibilities++;
-            }
-            else if (hexes[1].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
-            {
-                others = Physics2D.OverlapCircleAll(hexes[0].transform.position, hexSize * 1.25f);
-
-                for (int i = 0; i < others.Length; i++)
-                    if (others[i] != hexes[1] && others[i] != hexes[2] && others[i].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color) posibilities++;
-            }
-        }
-
-        return posibilities;
-    }
 
 }

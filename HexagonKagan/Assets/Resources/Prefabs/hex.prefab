@@ -111,4 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 232c3229d3a18ae40ae7c14dfc665620, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gravity: -1.8
+  master: {fileID: 0}
+  gravity: -10
+  verticalVelocity: 0
+  aim: {x: 0, y: 0}

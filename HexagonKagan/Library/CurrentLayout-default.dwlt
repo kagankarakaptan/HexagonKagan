@@ -46,7 +46,7 @@ MonoBehaviour:
     y: 0
     width: 1920
     height: 997
-  m_MinSize: {x: 875, y: 542}
+  m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
 --- !u!114 &3
 MonoBehaviour:
@@ -112,10 +112,10 @@ MonoBehaviour:
     y: 30
     width: 1920
     height: 947
-  m_MinSize: {x: 708, y: 492}
-  m_MaxSize: {x: 18003, y: 14042}
+  m_MinSize: {x: 709, y: 492}
+  m_MaxSize: {x: 18004, y: 14042}
   vertical: 0
-  controlID: 14500
+  controlID: 61
 --- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -137,10 +137,10 @@ MonoBehaviour:
     y: 0
     width: 1509
     height: 947
-  m_MinSize: {x: 432, y: 492}
-  m_MaxSize: {x: 14002, y: 14042}
+  m_MinSize: {x: 433, y: 492}
+  m_MaxSize: {x: 14003, y: 14042}
   vertical: 1
-  controlID: 14570
+  controlID: 110
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -165,7 +165,7 @@ MonoBehaviour:
   m_MinSize: {x: 401, y: 221}
   m_MaxSize: {x: 8001, y: 4021}
   vertical: 0
-  controlID: 14571
+  controlID: 111
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -193,7 +193,7 @@ MonoBehaviour:
   - {fileID: 16}
   - {fileID: 17}
   m_Selected: 0
-  m_LastSelected: 1
+  m_LastSelected: 2
 --- !u!114 &9
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -241,10 +241,10 @@ MonoBehaviour:
     y: 672
     width: 1509
     height: 275
-  m_MinSize: {x: 432, y: 271}
-  m_MaxSize: {x: 14002, y: 10021}
+  m_MinSize: {x: 433, y: 271}
+  m_MaxSize: {x: 14003, y: 10021}
   vertical: 0
-  controlID: 14528
+  controlID: 138
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -264,8 +264,8 @@ MonoBehaviour:
     y: 0
     width: 583
     height: 275
-  m_MinSize: {x: 200, y: 200}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 201, y: 221}
+  m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 18}
   m_Panes:
   - {fileID: 18}
@@ -448,14 +448,14 @@ MonoBehaviour:
   m_Gizmos: 1
   m_SceneIsLit: 1
   m_SceneLighting: 1
-  m_2DMode: 0
+  m_2DMode: 1
   m_isRotationLocked: 0
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: -0.77393806, y: -1.0268905, z: 0}
+    m_Target: {x: 2.0961978, y: 1.30905, z: -10.595197}
     speed: 2
-    m_Value: {x: -0.77393806, y: -1.0268905, z: 0}
+    m_Value: {x: 2.0961978, y: 1.30905, z: -10.595197}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -505,9 +505,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 4.146206
+    m_Target: 11.18592
     speed: 2
-    m_Value: 4.146206
+    m_Value: 11.18592
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -525,8 +525,8 @@ MonoBehaviour:
     m_FarClip: 10000
     m_DynamicClip: 1
     m_OcclusionCulling: 0
-  m_LastSceneViewRotation: {x: -0.17135093, y: 0.35508847, z: -0.06638144, w: -0.9165942}
-  m_LastSceneViewOrtho: 0
+  m_LastSceneViewRotation: {x: 0.34323668, y: 0.2757879, z: -0.10617568, w: 0.89154756}
+  m_LastSceneViewOrtho: 1
   m_ReplacementShader: {fileID: 0}
   m_ReplacementString: 
   m_SceneVisActive: 1
@@ -581,21 +581,21 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 73
-    width: 675
-    height: 650
+    width: 795
+    height: 651
   m_ViewDataDictionary: {fileID: 0}
   m_ViewTransforms:
     m_KeySerializationHelper:
-    - {fileID: 110776354, guid: abe41865abe4f1f4aaa3a47171c703e3, type: 2}
+    - {fileID: -6299542858973495882, guid: edebae40f5d0706498081ec3b3d8d91f, type: 2}
     m_ValueSerializationHelper:
-    - e00: 1
+    - e00: 0.74151427
       e01: 0
       e02: 0
-      e03: 0
+      e03: 111.57158
       e10: 0
-      e11: 1
+      e11: 0.74151427
       e12: 0
-      e13: 0
+      e13: 132.45161
       e20: 0
       e21: 0
       e22: 1
@@ -605,10 +605,11 @@ MonoBehaviour:
       e32: 0
       e33: 1
   m_PreviewAnimator: {fileID: 0}
-  m_AnimatorController: {fileID: 9100000, guid: abe41865abe4f1f4aaa3a47171c703e3,
+  m_AnimatorController: {fileID: 9100000, guid: edebae40f5d0706498081ec3b3d8d91f,
     type: 2}
   m_BreadCrumbs:
-  - m_Target: {fileID: 110776354, guid: abe41865abe4f1f4aaa3a47171c703e3, type: 2}
+  - m_Target: {fileID: -6299542858973495882, guid: edebae40f5d0706498081ec3b3d8d91f,
+      type: 2}
     m_ScrollPosition: {x: 0, y: 0}
   stateMachineGraph: {fileID: 0}
   stateMachineGraphGUI: {fileID: 0}
@@ -650,9 +651,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
+      m_SelectedIDs: 2a390000
       m_LastClickedID: 0
-      m_ExpandedIDs: 90b2fdff809affffee9affffecfaffff
+      m_ExpandedIDs: 50fbffff22390000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -715,20 +716,20 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Resources
+    - Assets/Resources/Prefabs
   m_ViewMode: 1
   m_StartGridSize: 16
   m_LastFolders:
-  - Assets/Resources
+  - Assets/Resources/Prefabs
   m_LastFoldersGridSize: 16
   m_LastProjectPath: C:\Users\ryuk\Desktop\Projects\Unity\HexagonKagan
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 70570000
-    m_LastClickedID: 22384
-    m_ExpandedIDs: 00000000924800007057000000ca9a3b
+    m_SelectedIDs: 8a390000
+    m_LastClickedID: 14730
+    m_ExpandedIDs: 00000000803900008439000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -756,7 +757,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000009248000000ca9a3b
+    m_ExpandedIDs: 0000000080390000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -783,7 +784,7 @@ MonoBehaviour:
   m_ListAreaState:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 1
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c6230000a08f0000904c000060a700001cef000042360000fa370000688200008c8200005c370000ee3e0000a43e000000000000b63c00001c5300008e54000092540000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -901,7 +902,7 @@ MonoBehaviour:
     width: 410
     height: 926
   m_ViewDataDictionary: {fileID: 0}
-  m_InitialOpenURL: https://public-cdn.cloud.unity3d.com/editor/production/cloud/ads
+  m_InitialOpenURL: https://public-cdn.cloud.unity3d.com/editor/production/cloud/hub
   m_GlobalObjectTypeName: 
   m_RegisteredViewURLs:
   - https://public-cdn.cloud.unity3d.com/editor/production/cloud/hub
