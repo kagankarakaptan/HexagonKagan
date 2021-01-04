@@ -5,6 +5,7 @@ using UnityEngine;
 public class HexPhysics : MonoBehaviour
 {
     public MasterMind master;
+    public GameObject mother;
 
     public float gravity;
     public float verticalVelocity;
@@ -12,15 +13,20 @@ public class HexPhysics : MonoBehaviour
 
     private bool key;
 
+    public int clock;
+
     private void Start()
     {
         master = GameObject.Find("Master").GetComponent<MasterMind>();
+        mother = GameObject.Find("Mother");
+
         key = false;
+        clock = 999;
     }
 
     void Update()
     {
-        if (master.canFall)
+        if (mother.transform.childCount == 0)
         {
 
 

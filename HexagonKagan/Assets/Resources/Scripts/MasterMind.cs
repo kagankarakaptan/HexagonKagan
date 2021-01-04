@@ -1,28 +1,36 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MasterMind : MonoBehaviour
 {
+    public int score; //current score variable
+    public Text scoreText;
+    public int scoreBorder; //for the bomb spawn
+
     public GameObject mother; //the center point and a parent for the rotation of the selected group of 3 hexes
 
     public GameObject hexPrefab; //prefab of the hex itself
     public GameObject hiddenPrefab; //invisible hex prefab for the bottom of the gridMap
 
+    public Sprite hexSprite; //sprite of the hexagon itself
+    public Sprite bombSprite; //sprite of the bomb itself
+
     public Color[] colors; //possible colors array for the hexes
-    public float hexSize; //keeps the size of the hexes with spacing value
+    [HideInInspector] public float hexSize; //keeps the size of the hexes with spacing value
     public float spacing; //spacing between hexes
 
     private Vector2[] rootMap; //1D matrix of the vector2 that keeps the collision points of the hexes each-other 
 
-    public int gridWidth = 8; //size of the gridMap's width
-    public int gridHeight = 9; //size of the gridMap's height
+    public int gridWidth; //size of the gridMap's width
+    public int gridHeight; //size of the gridMap's height
 
     private Vector2 mapOffset; //position of the grid's bottom left corner
 
-    public bool canSpin; //keeps the game state (can we play or should we wait the movements of the environment ?)
-    public bool canFall; //keeps the game state (can we play or should we wait the movements of the environment ?)
-    public bool canSelect; //keeps the game state (can we play or should we wait the movements of the environment ?)
+    //public bool canSpin; //keeps the game state (can we play or should we wait the movements of the environment ?)
+    //public bool canFall; //keeps the game state (can we play or should we wait the movements of the environment ?)
+    public bool canPlay; //keeps the game state (can we play or should we wait the movements of the environment ?)
 
     public int groundedCount;
 
@@ -31,6 +39,10 @@ public class MasterMind : MonoBehaviour
         rootMap = new Vector2[2 * (gridWidth - 1) * (gridHeight - 1)];
         hexSize = hexPrefab.GetComponent<SpriteRenderer>().bounds.size.x + spacing;
         mapOffset = transform.position;
+        score = 0;
+        scoreBorder = 1000;
+
+        groundedCount = gridHeight * gridWidth;
 
     }
 
@@ -42,11 +54,13 @@ public class MasterMind : MonoBehaviour
         //re-building the hexMap
         ReBuild();
 
+        //fixing the hexMap
+        if (PossibleMovements() == 0) ReBuildAll();
+
         //setting the initial values when everything is ready
-        canSpin = true;
-        canFall = false;
-        canSelect = true;
-        groundedCount = gridHeight * gridWidth;
+        //canSpin = true;
+        //canFall = false;
+        canPlay = true;
 
 
     }
@@ -56,62 +70,73 @@ public class MasterMind : MonoBehaviour
 
     private void Update()
     {
+
         //selection hex group
-        if (Input.GetMouseButtonDown(0) && canSelect)
+        if (Input.GetMouseButtonDown(0) && canPlay)
         {
-            Collider2D[] hexes = Physics2D.OverlapCircleAll(Camera.main.ScreenToWorldPoint(Input.mousePosition), hexSize / 4f);
+            Collect(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-            //Debug.Log(hexes.Length);
-
-            if (hexes.Length == 3)
-            {
-                if (mother.transform.childCount == 3)
-                    Release();
-
-                Collect(hexes);
-            }
-            //else
-            //    Release();
+            ////mobile testing...
+            //Spin(true);
         }
 
-
         //Spinning the gruop
-        if (Input.GetKeyDown(KeyCode.Space) && mother.transform.childCount == 3 && canSpin)
+        if (Input.GetKeyDown(KeyCode.Space) && mother.transform.childCount == 3)
             Spin(true);
 
 
-        ////testing the possible movements
-        //if (Input.GetKeyDown(KeyCode.T))
-        //    Debug.Log(PossibleMovements());
-
     }
 
-    //setting the selecting as a mother with children
-    public void Collect(Collider2D[] hexes)
+    public void Collect(Vector2 position)
     {
-        Vector2 centerOfMass = (hexes[0].transform.position + hexes[1].transform.position + hexes[2].transform.position) / 3;
+        Collider2D[] hexes = Physics2D.OverlapCircleAll(position, hexSize / 4f);
 
-        mother.transform.position = centerOfMass;
-        mother.GetComponent<SpriteRenderer>().enabled = true;
+        if (hexes.Length == 3)
+        {
+            if (mother.transform.childCount == 3)
+                Release();
 
-        foreach (Collider2D hex in hexes)
-            hex.transform.SetParent(mother.transform);
+            Vector2 centerOfMass = (hexes[0].transform.position + hexes[1].transform.position + hexes[2].transform.position) / 3;
+            mother.transform.position = centerOfMass;
+            mother.GetComponent<SpriteRenderer>().enabled = true;
+
+
+            foreach (Collider2D hex in hexes)
+                hex.gameObject.transform.SetParent(mother.transform);
+        }
+
+
+
+
     }
 
     //detaching children from currentSelection
     public void Release()
     {
+        for (int i = 0; i < mother.transform.childCount; i++)
+            mother.transform.GetChild(i).rotation = Quaternion.identity;
+
+        //if (mother.transform.GetChild(0) != null) mother.transform.GetChild(0).rotation = Quaternion.identity;
+        //if (mother.transform.GetChild(1) != null) mother.transform.GetChild(1).rotation = Quaternion.identity;
+        //if (mother.transform.GetChild(2) != null) mother.transform.GetChild(2).rotation = Quaternion.identity;
+
+        //Transform[] children = mother.transform.GetComponentsInChildren<Transform>();
+        //foreach (Transform child in children)
+        //    child.transform.rotation = Quaternion.identity;
+
         mother.transform.DetachChildren();
         mother.GetComponent<SpriteRenderer>().enabled = false;
-        mother.transform.rotation = Quaternion.Euler(0, 0, 0);
+
+        mother.GetComponent<Animator>().Play("Idle");
+        //mother.transform.rotation = Quaternion.Euler(0, 0, 0);
 
     }
 
     //spinning the hex goup
     public void Spin(bool direction)
     {
-        canFall = false;
-        canSelect = false;
+        //canFall = false;
+        canPlay = false;
 
         //setting the game phase to movement of hexes
         if (direction)
@@ -151,30 +176,45 @@ public class MasterMind : MonoBehaviour
     //testing killing victims
     public void Action()
     {
-        if (!canFall)
+        List<GameObject> victims = NeighborhoodTest();
+
+        if (victims.Count != 0)
         {
-            List<GameObject> victims = NeighborhoodTest();
+            //Debug.Log(mother.transform.GetChild(0).position);
+            //GameObject temp = mother.transform.GetChild(0).gameObject;
+            Release();
+            //Debug.Log(temp.transform.position);
 
-            if (victims.Count != 0)
+
+            foreach (GameObject victim in victims)
             {
-                mother.GetComponent<Animator>().Play("Idle");
-
-                foreach (GameObject victim in victims)
-                {
-                    victim.transform.position += new Vector3(0, 15f, 0);
-                    victim.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)];
-
-                }
-
-
-                Release();
-                canFall = true;
-                //StartCoroutine(WaitAndAction());
+                Kill(victim);
             }
 
+            if (score >= scoreBorder)
+                BombSpawn(victims[Random.Range(0, victims.Count)]);
 
-            victims.Clear();
+
+            //canFall = true;
+            StartCoroutine(WaitAndAction());
         }
+        else if (mother.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Idle"))
+        {
+            CountDown();
+
+            Collect(mother.transform.position);
+
+            canPlay = true;
+
+            //Debug.Log(PossibleMovements());
+            if (PossibleMovements() == 0)
+                GameOver();
+
+        }
+
+
+        victims.Clear();
+
 
 
     }
@@ -309,24 +349,88 @@ public class MasterMind : MonoBehaviour
         //} while (similarity > 0);
     }
 
+    public void ReBuildAll()
+    {
+        GameObject[] hexes = GameObject.FindGameObjectsWithTag("hex");
+
+        foreach (GameObject hex in hexes)
+            hex.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)];
+
+        if (PossibleMovements() == 0)
+            ReBuildAll();
+
+    }
+
     private IEnumerator WaitAndAction()
     {
-        yield return null;
+        //yield return null;
         //Debug.Log("falling started");
         //Debug.Break();
 
-
-        while (groundedCount != gridHeight * gridWidth)
-            yield return null;
+        do yield return null;
+        while (groundedCount != gridHeight * gridWidth);
+        Action();
 
         //Debug.Log("everything settled");
-        canFall = false;
-        Action();
+        //canFall = false;
 
 
 
 
     }
 
+    public void Kill(GameObject victim)
+    {
 
+
+        victim.transform.position += new Vector3(0, (gridHeight + 5) * hexSize * Mathf.Sqrt(3) / 2f, 0); //move up
+        victim.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)]; //change color
+
+        if (victim.transform.CompareTag("bomb"))
+        {
+            victim.transform.tag = "hex";
+            victim.GetComponent<HexPhysics>().clock = 999;
+            victim.GetComponent<SpriteRenderer>().sprite = hexSprite;
+            victim.transform.GetChild(0).GetComponent<MeshRenderer>().enabled = false;
+        }
+
+        GetScore();
+    }
+
+    public void GetScore()
+    {
+        score += 5;
+        scoreText.GetComponent<Text>().text = score.ToString();
+        //effects
+    }
+
+    public void BombSpawn(GameObject victim)
+    {
+        victim.transform.tag = "bomb";
+        //victim.GetComponent<SpriteRenderer>().sprite = bombSprite;
+        //victim.GetComponent<SpriteRenderer>().color = Color.black; //for visual testing
+        victim.GetComponent<HexPhysics>().clock = Random.Range(6, 11);
+        victim.transform.GetChild(0).GetComponent<MeshRenderer>().enabled = true;
+        scoreBorder += 1000;
+
+    }
+
+    public void CountDown()
+    {
+        GameObject[] bombs = GameObject.FindGameObjectsWithTag("bomb");
+
+        foreach (GameObject bomb in bombs)
+        {
+            bomb.GetComponent<HexPhysics>().clock--;
+            bomb.transform.GetChild(0).GetComponent<TextMesh>().text = bomb.GetComponent<HexPhysics>().clock.ToString();
+            if (bomb.GetComponent<HexPhysics>().clock == 0)
+                GameOver();
+        }
+
+    }
+
+    public void GameOver()
+    {
+        Debug.Log("game over!");
+    }
 }

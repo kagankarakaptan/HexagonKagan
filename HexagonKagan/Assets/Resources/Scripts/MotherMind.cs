@@ -16,8 +16,8 @@ public class MotherMind : MonoBehaviour
 
     public void Ending()
     {
-        //if (master.groundedCount == master.gridWidth * master.gridHeight)
-        master.canSelect = true;
+        if (master.groundedCount == master.gridWidth * master.gridHeight)
+            master.canPlay = true;
     }
 
 }
