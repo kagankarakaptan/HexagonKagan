@@ -1,13 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MasterMind : MonoBehaviour
 {
-    public int score; //current score variable
-    public Text scoreText;
-    public int scoreBorder; //for the bomb spawn
+    private int score; //current score variable
+    private int scoreBorder; //for the bomb spawn
+    public Text scoreText; //the text component of the ScoreText object inside the UI object to show current score
+    public Text maxScoreText; //the text component of the MaxScoreText object inside the UI object to show max score
 
     public GameObject mother; //the center point and a parent for the rotation of the selected group of 3 hexes
 
@@ -28,11 +30,13 @@ public class MasterMind : MonoBehaviour
 
     private Vector2 mapOffset; //position of the grid's bottom left corner
 
-    //public bool canSpin; //keeps the game state (can we play or should we wait the movements of the environment ?)
-    //public bool canFall; //keeps the game state (can we play or should we wait the movements of the environment ?)
-    public bool canPlay; //keeps the game state (can we play or should we wait the movements of the environment ?)
+    [HideInInspector] public bool canPlay; //keeps the game state (can we play or should we wait the movements of the environment ?)
 
-    public int groundedCount;
+    [HideInInspector] public int groundedCount; //keeps the count of the total grounded hexes
+    private Vector3 firstPos; //first position for each touch
+
+    private float overlapRadius; //radius for the all overlap methods
+
 
     private void Awake()
     {
@@ -43,11 +47,16 @@ public class MasterMind : MonoBehaviour
         scoreBorder = 1000;
 
         groundedCount = gridHeight * gridWidth;
+        overlapRadius = hexSize / 4f;
+
+        maxScoreText.GetComponent<Text>().text = $"Max Score: {PlayerPrefs.GetInt("maxScore")}";
+
 
     }
 
     private void Start()
     {
+
         //creating the hexGrid
         BuildMap();
 
@@ -57,46 +66,88 @@ public class MasterMind : MonoBehaviour
         //fixing the hexMap
         if (PossibleMovements() == 0) ReBuildAll();
 
-        //setting the initial values when everything is ready
-        //canSpin = true;
-        //canFall = false;
         canPlay = true;
 
 
     }
 
-
-
-
     private void Update()
     {
 
-        //selection hex group
         if (Input.GetMouseButtonDown(0) && canPlay)
         {
-            Collect(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            firstPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-            ////mobile testing...
-            //Spin(true);
+            //Debug.Break();
+            //Debug.Log(firstPos);
+            //Debug.Log("pressed");
         }
 
-        //Spinning the gruop
-        if (Input.GetKeyDown(KeyCode.Space) && mother.transform.childCount == 3)
-            Spin(true);
+        if (Input.GetMouseButtonUp(0) && canPlay)
+        {
+            Vector3 lastPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            if ((lastPos - firstPos).magnitude < hexSize / 4f)
+            {
+                Collect(Camera.main.ScreenToWorldPoint(Input.mousePosition), overlapRadius);
+            }
+
+            else if (mother.transform.childCount == 3)
+            {
+                Vector2 initialVec = firstPos - mother.transform.position;
+                Vector2 finalVec = lastPos - mother.transform.position;
+
+                float crossProduct = initialVec.x * finalVec.y - initialVec.y * finalVec.x;
+                if (crossProduct < 0)
+                    Spin(true);
+                else
+                    Spin(false);
+
+
+                //Debug.Log(crossProduct);
+
+                //Debug.Log(Mathf.Atan2(finalVec.y, finalVec.x) * Mathf.Rad2Deg);
+                //Debug.Log(Mathf.Atan2(firstPos.y, firstPos.x) * Mathf.Rad2Deg);
+
+
+
+                //Spin(true);
+            }
+
+
+            //Debug.Log("released");
+        }
+
+
+
+
+        ////selection hex group
+        //if (Input.GetMouseButtonDown(0) && canPlay)
+        //{
+        //    Collect(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+
+        //    ////mobile testing...
+        //    //Spin(true);
+        //}
+
+        ////Spinning the gruop
+        //if (Input.GetKeyDown(KeyCode.Space) && mother.transform.childCount == 3)
+        //    Spin(true);
 
 
     }
 
-    public void Collect(Vector2 position)
+    //giving all the nearest hexagons as a child to the mother based on parameters
+    public void Collect(Vector2 position, float radius)
     {
-        Collider2D[] hexes = Physics2D.OverlapCircleAll(position, hexSize / 4f);
+        Collider2D[] hexes = Physics2D.OverlapCircleAll(position, radius);
 
         if (hexes.Length == 3)
         {
             if (mother.transform.childCount == 3)
                 Release();
 
-            Vector2 centerOfMass = (hexes[0].transform.position + hexes[1].transform.position + hexes[2].transform.position) / 3;
+            Vector2 centerOfMass = (hexes[0].transform.position + hexes[1].transform.position + hexes[2].transform.position) / 3f;
             mother.transform.position = centerOfMass;
             mother.GetComponent<SpriteRenderer>().enabled = true;
 
@@ -110,7 +161,7 @@ public class MasterMind : MonoBehaviour
 
     }
 
-    //detaching children from currentSelection
+    //detaching children from mother
     public void Release()
     {
         for (int i = 0; i < mother.transform.childCount; i++)
@@ -153,14 +204,14 @@ public class MasterMind : MonoBehaviour
 
     }
 
-    //testing for neighborhood
+    //getting all the hexes that matches with color in the map
     public List<GameObject> NeighborhoodTest()
     {
         List<GameObject> neighbors = new List<GameObject>();
 
         foreach (Vector2 root in rootMap)
         {
-            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, hexSize / 2f);
+            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, overlapRadius * 2);
 
             if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color && hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
             {
@@ -173,13 +224,14 @@ public class MasterMind : MonoBehaviour
         return neighbors;
     }
 
-    //testing killing victims
+    //(main action mechanic of the game)  testing, killing and transforming to the bomb victims
     public void Action()
     {
         List<GameObject> victims = NeighborhoodTest();
 
         if (victims.Count != 0)
         {
+
             //Debug.Log(mother.transform.GetChild(0).position);
             //GameObject temp = mother.transform.GetChild(0).gameObject;
             Release();
@@ -200,9 +252,10 @@ public class MasterMind : MonoBehaviour
         }
         else if (mother.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Idle"))
         {
+
             CountDown();
 
-            Collect(mother.transform.position);
+            Collect(mother.transform.position, overlapRadius * 2);
 
             canPlay = true;
 
@@ -219,33 +272,33 @@ public class MasterMind : MonoBehaviour
 
     }
 
+    //method for the count all possible movements in the map
     public int PossibleMovements()
     {
         int posibilities = 0;
-        float radius = hexSize / 2f;
 
         foreach (Vector2 root in rootMap)
         {
-            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, radius);
+            Collider2D[] hexes = Physics2D.OverlapCircleAll(root, overlapRadius * 2);
             Collider2D[] others;
 
             if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color)
             {
-                others = Physics2D.OverlapCircleAll(hexes[2].transform.position, radius);
+                others = Physics2D.OverlapCircleAll(hexes[2].transform.position, overlapRadius * 2);
 
                 for (int i = 0; i < others.Length; i++)
                     if (others[i] != hexes[0] && others[i] != hexes[1] && others[i].GetComponent<SpriteRenderer>().color == hexes[0].GetComponent<SpriteRenderer>().color) posibilities++;
             }
             else if (hexes[0].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
             {
-                others = Physics2D.OverlapCircleAll(hexes[1].transform.position, radius);
+                others = Physics2D.OverlapCircleAll(hexes[1].transform.position, overlapRadius * 2);
 
                 for (int i = 0; i < others.Length; i++)
                     if (others[i] != hexes[0] && others[i] != hexes[2] && others[i].GetComponent<SpriteRenderer>().color == hexes[0].GetComponent<SpriteRenderer>().color) posibilities++;
             }
             else if (hexes[1].GetComponent<SpriteRenderer>().color == hexes[2].GetComponent<SpriteRenderer>().color)
             {
-                others = Physics2D.OverlapCircleAll(hexes[0].transform.position, radius);
+                others = Physics2D.OverlapCircleAll(hexes[0].transform.position, overlapRadius * 2);
 
                 for (int i = 0; i < others.Length; i++)
                     if (others[i] != hexes[1] && others[i] != hexes[2] && others[i].GetComponent<SpriteRenderer>().color == hexes[1].GetComponent<SpriteRenderer>().color) posibilities++;
@@ -255,6 +308,7 @@ public class MasterMind : MonoBehaviour
         return posibilities;
     }
 
+    //creating of the initial state of the grid map
     public void BuildMap()
     {
         int rootIndex = 0;
@@ -298,8 +352,12 @@ public class MasterMind : MonoBehaviour
 
             }
 
+        //foreach (Vector2 root in rootMap)
+        //    Instantiate(Resources.Load("Prefabs/tester"), root, Quaternion.identity);
+
     }
 
+    //re-calculating colors for the all matched hexagon on the grid
     public void ReBuild()
     {
         List<GameObject> neighbors = NeighborhoodTest();
@@ -349,6 +407,7 @@ public class MasterMind : MonoBehaviour
         //} while (similarity > 0);
     }
 
+    //re-calculating the colors for every hexagon placed
     public void ReBuildAll()
     {
         GameObject[] hexes = GameObject.FindGameObjectsWithTag("hex");
@@ -361,6 +420,7 @@ public class MasterMind : MonoBehaviour
 
     }
 
+    //recursive action system
     private IEnumerator WaitAndAction()
     {
         //yield return null;
@@ -379,9 +439,9 @@ public class MasterMind : MonoBehaviour
 
     }
 
+    //"destroying" the victims
     public void Kill(GameObject victim)
     {
-
 
         victim.transform.position += new Vector3(0, (gridHeight + 5) * hexSize * Mathf.Sqrt(3) / 2f, 0); //move up
         victim.GetComponent<SpriteRenderer>().color = colors[Random.Range(0, colors.Length)]; //change color
@@ -397,24 +457,34 @@ public class MasterMind : MonoBehaviour
         GetScore();
     }
 
+    //earning score
     public void GetScore()
     {
         score += 5;
-        scoreText.GetComponent<Text>().text = score.ToString();
-        //effects
+        scoreText.GetComponent<Text>().text = $"Score: {score}";
+
+        if (score > PlayerPrefs.GetInt("maxScore"))
+        {
+            PlayerPrefs.SetInt("maxScore", score);
+            maxScoreText.GetComponent<Text>().text = $"Max Score: {score}";
+
+        }
     }
 
+    //"creating bomb"
     public void BombSpawn(GameObject victim)
     {
         victim.transform.tag = "bomb";
         //victim.GetComponent<SpriteRenderer>().sprite = bombSprite;
         //victim.GetComponent<SpriteRenderer>().color = Color.black; //for visual testing
         victim.GetComponent<HexPhysics>().clock = Random.Range(6, 11);
+        victim.transform.GetChild(0).GetComponent<TextMesh>().text = victim.GetComponent<HexPhysics>().clock.ToString();
         victim.transform.GetChild(0).GetComponent<MeshRenderer>().enabled = true;
         scoreBorder += 1000;
 
     }
 
+    //count process for the every bombs
     public void CountDown()
     {
         GameObject[] bombs = GameObject.FindGameObjectsWithTag("bomb");
@@ -429,8 +499,16 @@ public class MasterMind : MonoBehaviour
 
     }
 
+    //ending of the game
     public void GameOver()
     {
-        Debug.Log("game over!");
+        //Debug.Log("game over!");
+        SceneManager.LoadScene("Menu");
     }
+
+    //public void OnDrawGizmosSelected()
+    //{
+    //    Gizmos.DrawWireSphere(Vector3.zero, overlapRadius);
+
+    //}
 }

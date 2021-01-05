@@ -1,19 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class HexPhysics : MonoBehaviour
 {
-    public MasterMind master;
-    public GameObject mother;
+    public MasterMind master; //master object of the game
+    public GameObject mother; //holder of the selected group of hexes
 
-    public float gravity;
-    public float verticalVelocity;
-    public Vector2 aim;
+    public float gravity; //vertical movement value to be added to the all hexes
+    public float verticalVelocity; //current vertical movement speed of this object
+    public Vector2 aim; //target position according the one below
 
-    private bool key;
+    private bool key; //the switch parameter to the controll if this object can send the message to the master anytime
 
-    public int clock;
+    public int clock; //the counter value of the bomb hexagon
 
     private void Start()
     {
@@ -21,7 +19,6 @@ public class HexPhysics : MonoBehaviour
         mother = GameObject.Find("Mother");
 
         key = false;
-        clock = 999;
     }
 
     void Update()
@@ -42,6 +39,7 @@ public class HexPhysics : MonoBehaviour
             if (((Vector2)transform.position - aim).magnitude > master.hexSize / 4f)
             {
                 transform.position -= new Vector3(0, -gravity * Time.deltaTime, 0);
+                //transform.position = Vector3.Lerp(transform.position, aim, 0.05f);
             }
             else
             {
@@ -72,6 +70,9 @@ public class HexPhysics : MonoBehaviour
 
     }
 
+    //Basic communication system between master for the ground checking problem
+
+    //if isGrounded
     public void Speak()
     {
         if (key)
@@ -79,6 +80,7 @@ public class HexPhysics : MonoBehaviour
         key = false;
     }
 
+    //if isntGrounded
     public void Steal()
     {
         if (!key)
